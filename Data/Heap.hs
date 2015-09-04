@@ -2,12 +2,13 @@ module Data.Heap (
   Heap,
   singleton,
   pop,
-  fromList
+  fromList,
+  toList
  ) where
 
 import Data.Monoid (Monoid(..),(<>))
 
-data Heap p a = Empty | Heap p a (Heap p a) (Heap p a) deriving Show
+data Heap p a = Empty | Heap p a (Heap p a) (Heap p a)
 
 instance (Ord p) => Monoid (Heap p a) where
   mempty = Empty
@@ -16,6 +17,9 @@ instance (Ord p) => Monoid (Heap p a) where
     | otherwise = Heap p2 a2 (heap1 <> r2) l2
   mappend heap Empty = heap
   mappend Empty heap = heap
+
+instance (Show p, Ord p, Show a) => Show (Heap p a) where
+  show h = "fromList " ++ show (toList h)
 
 instance Functor (Heap p) where
   fmap _ Empty = Empty
@@ -36,4 +40,8 @@ fromList = tf . map (uncurry singleton) where
   mp [] = []
   mp [x] = [x]
   mp (a:b:r) = (a <> b) : mp r
+
+toList heap = case pop heap of
+  Nothing -> []
+  Just (p,a,h) -> (p,a) : toList h
 
