@@ -15,10 +15,10 @@ import Data.List
 
 data Grid = Grid {
   gridPlayer :: (Int,Int),
-  gridWalls :: Array (Int,Int) Bool,
   gridBoxes :: S.Set (Int,Int),
+  gridWalls :: Array (Int,Int) Bool,
   gridTargets :: S.Set (Int,Int)
- }
+ } deriving (Ord,Eq)
 
 data Direction = North | East | South | West deriving (Ord,Eq)
 data Tile = Wall | Clear | Box | Target | Player | PT | BT deriving (Eq)
