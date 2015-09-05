@@ -32,6 +32,12 @@ step East (x,y) = (x+1,y)
 step South (x,y) = (x,y+1)
 step West (x,y) = (x-1,y)
 
+instance Show Direction where
+  show North = "↑"
+  show East = "→"
+  show South = "↓"
+  show West = "←"
+
 lookupGrid l g
  | not $ inRange (bounds $ gridWalls g) l = Wall
  | gridWalls g ! l = Wall
@@ -71,8 +77,8 @@ applyStep d g = let
 -}
 readGrid t = let
   l = lines t
-  h = length l
-  w = maximum $ map length l
+  h = length l - 1
+  w = maximum (map length l) - 1
   i = do
     (y,r) <- zip [0..] l
     (x,c) <- zip [0..] r
