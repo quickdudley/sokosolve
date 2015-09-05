@@ -4,7 +4,9 @@ module Grid (
   Tile(..),
   directions,
   step,
+  applyStep,
   lookupGrid,
+  solved,
   readGrid,
   showGrid
  ) where
@@ -96,4 +98,6 @@ showGrid g = unlines $ map (map gc) pts where
     Target -> '_'
     BT -> '+'
     PT -> 'P'
+
+solved g = gridBoxes g == gridTargets g
 
