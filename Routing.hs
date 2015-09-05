@@ -13,7 +13,7 @@ astar :: (Ord n) =>
   (n -> Bool) ->
   (n -> [(Integer,s,n)]) ->
   n ->
-  [([s],n)]
+  [([s],n,Integer)]
 astar h g b s = flip evalState (H.singleton 0 (s,id,0)) (go M.empty) where
   go v = do
     n <- pop
@@ -28,9 +28,10 @@ astar h g b s = flip evalState (H.singleton 0 (s,id,0)) (go M.empty) where
            ) $ b a
           na = pushAll nxt >> go v'
           v' = M.insert a (s []) v
-          in if g a then fmap ((s [], a):) na else na
+          in if g a then fmap ((s [], a, c):) na else na
 
-dijkstra :: (Ord n) => (n -> Bool) -> (n -> [(Integer,s,n)]) -> n -> [([s],n)]
+dijkstra ::
+  (Ord n) => (n -> Bool) -> (n -> [(Integer,s,n)]) -> n -> [([s],n,Integer)]
 dijkstra = astar (const 0)
 
 pop :: (Ord p) => State (H.Heap p a) (Maybe (p,a))
