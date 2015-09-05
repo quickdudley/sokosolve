@@ -45,5 +45,10 @@ wrapStep :: (n -> [(Integer,s,n)]) -> n -> [(Integer,[s],n)]
 wrapStep b = map (\(c,s,n) -> (c,[s],n)) . b
 
 walks :: Grid -> [(Integer,[Direction],Grid)]
-walks g = wrapStep pushSteps g ++ clearWalks g
+walks g = do
+  (c1,p1,g1) <- clearWalks g
+  (c2,p2,g2) <- pushSteps g1
+  return (c1 + c2, p1 ++ [p2], g2)
+
+-- wrapStep pushSteps g ++ clearWalks g
 
