@@ -18,7 +18,7 @@ main = do
       " $ : Box",
       " . : Target",
       " * : Box on target",
-      " + : Player on target,
+      " + : Player on target",
       "Output: UTF-8 to stdout"
      ]
     (fn:_) -> do
