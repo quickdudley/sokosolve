@@ -6,6 +6,8 @@ module Grid (
   step,
   applyStep,
   lookupGrid,
+  isBox,
+  isClear,
   solved,
   readGrid,
   showGrid
@@ -48,6 +50,14 @@ lookupGrid l g
  | S.member l (gridBoxes g) = Box
  | gridPlayer g == l = Player
  | otherwise = Clear
+
+isWall l g = let
+  w = gridWalls g
+  in not (inRange (bounds w) l) || w ! l
+
+isBox l g = S.member l $ gridBoxes g
+
+isClear l g = not (isWall l g || isBox l g)
 
 applyStep d g = let
   p = gridPlayer g
