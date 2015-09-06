@@ -97,7 +97,8 @@ readGrid t = let
     gridPlayer = case filter ((`elem` "pP") . snd) i of
       [] -> (-1,-1)
       ((p,_):_) -> p,
-    gridWalls = array ((0,0),(w,h)) [(l,c == '*') | (l,c) <- i],
+    gridWalls = array ((0,0),(w,h)) $
+      [(l,False) | l <- range ((0,0),(w,h))] ++ [(l,c == '*') | (l,c) <- i],
     gridBoxes = S.fromList $ map fst $ filter ((`elem` "#+") . snd) i,
     gridTargets = S.fromList $ map fst $ filter ((`elem` "_+P") . snd) i
    }
