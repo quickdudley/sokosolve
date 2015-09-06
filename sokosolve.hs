@@ -12,13 +12,13 @@ main = do
     [] -> mapM_ (hPutStrLn stderr) [
       "Usage: sokosolve <filename>",
       "File format: ascii; newlines: Unix style",
-      " * : Wall",
-      " . or space : Clear",
-      " p : Player",
-      " # : Box",
-      " _ : Target",
-      " + : Box on target",
-      " P : Player on target",
+      " # : Wall",
+      " - or space : Clear",
+      " @ : Player",
+      " $ : Box",
+      " . : Target",
+      " * : Box on target",
+      " + : Player on target,
       "Output: UTF-8 to stdout"
      ]
     (fn:_) -> do
