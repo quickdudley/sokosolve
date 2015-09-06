@@ -77,13 +77,13 @@ applyStep d g = let
 
 {-
  - Input format:
- - * : Wall
- - . or space : Clear
- - p : Player
- - # : Box
- - _ : Target
- - + : Box on target
- - P : Player on target
+ - # : Wall
+ - - or space : Clear
+ - @ : Player
+ - $ : Box
+ - . : Target
+ - * : Box on target
+ - + : Player on target
 -}
 readGrid t = let
   l = lines t
@@ -94,13 +94,13 @@ readGrid t = let
     (x,c) <- zip [0..] r
     return ((x,y),c)
   in Grid {
-    gridPlayer = case filter ((`elem` "pP") . snd) i of
+    gridPlayer = case filter ((`elem` "@+") . snd) i of
       [] -> (-1,-1)
       ((p,_):_) -> p,
     gridWalls = array ((0,0),(w,h)) $
-      [(l,False) | l <- range ((0,0),(w,h))] ++ [(l,c == '*') | (l,c) <- i],
-    gridBoxes = S.fromList $ map fst $ filter ((`elem` "#+") . snd) i,
-    gridTargets = S.fromList $ map fst $ filter ((`elem` "_+P") . snd) i
+      [(l,False) | l <- range ((0,0),(w,h))] ++ [(l,c == '#') | (l,c) <- i],
+    gridBoxes = S.fromList $ map fst $ filter ((`elem` "$*") . snd) i,
+    gridTargets = S.fromList $ map fst $ filter ((`elem` ".*+") . snd) i
    }
 
 showGrid g = unlines $ map (map gc) pts where
@@ -108,13 +108,13 @@ showGrid g = unlines $ map (map gc) pts where
     ((x',y'),(w,h)) = bounds (gridWalls g)
     in map (\y -> map (\x -> (x,y)) [x' .. w]) [y' .. h]
   gc l = case lookupGrid l g of
-    Wall -> '*'
-    Clear -> '.'
-    Player -> 'p'
-    Box -> '#'
-    Target -> '_'
-    BT -> '+'
-    PT -> 'P'
+    Wall -> '#'
+    Clear -> ' '
+    Player -> '@'
+    Box -> '$'
+    Target -> '.'
+    BT -> '*'
+    PT -> '+'
 
 solved g = gridBoxes g == gridTargets g
 
