@@ -27,10 +27,10 @@ byBox g = let
   p = gridPlayer g
   in any (flip isBox g . flip step p) directions
 
-pushSteps :: Grid -> [(Integer, Direction, Grid)]
+pushSteps :: Grid -> [(Integer, [Direction], Grid)]
 pushSteps g = let
   p = gridPlayer g
-  in map (\(d,p',b') -> (1,d,g {
+  in map (\(d,p',b') -> (1,[d],g {
       gridPlayer = p',
       gridBoxes = S.delete p' $ S.insert b' $ gridBoxes g
      })) $
@@ -54,5 +54,5 @@ walks :: Grid -> [(Integer,[Direction],Grid)]
 walks g = do
   (c1,p1,g1) <- clearWalks g
   (c2,p2,g2) <- pushSteps g1
-  return (c1 + c2, p1 ++ [p2], g2)
+  return (c1 + c2, p1 ++ p2, g2)
 
