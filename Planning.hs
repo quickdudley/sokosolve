@@ -19,18 +19,34 @@ solve g = case astar heuristic solved walks g of
 clearSteps :: Grid -> [(Integer, Direction, Grid)]
 clearSteps g = let
   p = gridPlayer g
-  in map (\(d,p',_) -> (1,d,g {gridPlayer = p'})) $
-    filter (\(_,_,t) -> t) $
-    map (\d -> let p' = step d p in (d,p',isClear p' g)) directions
+  in map (\(d,p') -> (1,d,g {gridPlayer = p'})) $
+    filter (\(_,p') -> isClear p' g) $
+    map (\d -> let p' = step d p in (d,p')) directions
 
 byBox g = let
   p = gridPlayer g
   in any (flip isBox g . flip step p) directions
 
-pushSteps :: Grid -> [(Integer, Direction, Grid)]
+inTunnel g d = let
+  p = gridPlayer g
+  flanks = map (\t -> step (t d) p) [turnLeft,turnRight]
+  foreflanks = map (step d) flanks
+  w = flip isWall g
+  in not (isTarget (step d p) g) && all w flanks && any w foreflanks
+
+pushTunnel :: (Integer, Direction, Grid) ->
+  Maybe (Integer, [Direction], Grid)
+pushTunnel (c,d,g) = if inTunnel g d
+  then do
+    g1 <- applyStep d g
+    (c',s,g') <- pushTunnel (c + 1, d, g1)
+    return (c', d:s, g')
+  else Just (c,[d],g)
+
+pushSteps :: Grid -> [(Integer, [Direction], Grid)]
 pushSteps g = let
   p = gridPlayer g
-  in map (\(d,p',b') -> (1,d,g {
+  in mapMaybe (\(d,p',b') -> pushTunnel (1,d,g {
       gridPlayer = p',
       gridBoxes = S.delete p' $ S.insert b' $ gridBoxes g
      })) $
@@ -54,5 +70,5 @@ walks :: Grid -> [(Integer,[Direction],Grid)]
 walks g = do
   (c1,p1,g1) <- clearWalks g
   (c2,p2,g2) <- pushSteps g1
-  return (c1 + c2, p1 ++ [p2], g2)
+  return (c1 + c2, p1 ++ p2, g2)
 
