@@ -5,10 +5,14 @@ module Grid (
   directions,
   stride,
   step,
+  turnLeft,
+  turnRight,
   applyStep,
   lookupGrid,
   isBox,
+  isWall,
   isClear,
+  isTarget,
   solved,
   readGrid,
   showGrid
@@ -71,6 +75,8 @@ isWall l g = let
 isBox l g = S.member l $ gridBoxes g
 
 isClear l g = not (isWall l g || isBox l g)
+
+isTarget l g = S.member l $ gridTargets g
 
 applyStep d g = let
   p = gridPlayer g

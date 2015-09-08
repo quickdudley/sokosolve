@@ -27,10 +27,26 @@ byBox g = let
   p = gridPlayer g
   in any (flip isBox g . flip step p) directions
 
+inTunnel g d = let
+  p = gridPlayer g
+  flanks = map (\t -> step (t d) p) [turnLeft,turnRight]
+  foreflanks = map (step d) flanks
+  w = flip isWall g
+  in not (isTarget (step d p) g) && all w flanks && any w foreflanks
+
+pushTunnel :: (Integer, Direction, Grid) ->
+  Maybe (Integer, [Direction], Grid)
+pushTunnel (c,d,g) = if inTunnel g d
+  then do
+    g1 <- applyStep d g
+    (c',s,g') <- pushTunnel (c + 1, d, g1)
+    return (c', d:s, g')
+  else Just (c,[d],g)
+
 pushSteps :: Grid -> [(Integer, [Direction], Grid)]
 pushSteps g = let
   p = gridPlayer g
-  in map (\(d,p',b') -> (1,[d],g {
+  in mapMaybe (\(d,p',b') -> pushTunnel (1,d,g {
       gridPlayer = p',
       gridBoxes = S.delete p' $ S.insert b' $ gridBoxes g
      })) $
