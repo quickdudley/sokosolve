@@ -19,9 +19,9 @@ solve g = case astar heuristic solved walks g of
 clearSteps :: Grid -> [(Integer, Direction, Grid)]
 clearSteps g = let
   p = gridPlayer g
-  in map (\(d,p',_) -> (1,d,g {gridPlayer = p'})) $
-    filter (\(_,_,t) -> t) $
-    map (\d -> let p' = step d p in (d,p',isClear p' g)) directions
+  in map (\(d,p') -> (1,d,g {gridPlayer = p'})) $
+    filter (\(_,p') -> isClear p' g) $
+    map (\d -> let p' = step d p in (d,p')) directions
 
 byBox g = let
   p = gridPlayer g
