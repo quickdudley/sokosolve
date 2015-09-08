@@ -3,6 +3,7 @@ module Grid (
   Direction(..),
   Tile(..),
   directions,
+  stride,
   step,
   applyStep,
   lookupGrid,
@@ -29,10 +30,22 @@ data Tile = Wall | Clear | Box | Target | Player | PT | BT deriving (Eq)
 
 directions = [North,East,South,West]
 
-step North (x,y) = (x,y-1)
-step East (x,y) = (x+1,y)
-step South (x,y) = (x,y+1)
-step West (x,y) = (x-1,y)
+step = stride 1
+
+stride n North (x,y) = (x,y-n)
+stride n East (x,y) = (x+n,y)
+stride n South (x,y) = (x,y+n)
+stride n West (x,y) = (x-n,y)
+
+turnLeft North = West
+turnLeft East = North
+turnLeft South = East
+turnLeft West = South
+
+turnRight North = East
+turnRight East = South
+turnRight South = West
+turnRight West = North
 
 instance Show Direction where
   show North = "↑"
