@@ -16,13 +16,6 @@ solve g = case astar heuristic solved walks g of
   [] -> Nothing
   ((s,_,_):_) -> Just $ concat s
 
-clearSteps :: Grid -> [(Integer, Direction, Grid)]
-clearSteps g = let
-  p = gridPlayer g
-  in map (\(d,p') -> (1,d,g {gridPlayer = p'})) $
-    filter (\(_,p') -> isClear p' g) $
-    map (\d -> let p' = step d p in (d,p')) directions
-
 byBox g = let
   p = gridPlayer g
   in any (flip isBox g . flip step p) directions

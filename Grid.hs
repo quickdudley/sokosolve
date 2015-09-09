@@ -14,6 +14,7 @@ module Grid (
   isClear,
   isTarget,
   solved,
+  clearSteps,
   readGrid,
   showGrid
  ) where
@@ -50,6 +51,9 @@ turnRight North = East
 turnRight East = South
 turnRight South = West
 turnRight West = North
+
+manhattan :: (Int,Int) -> (Int,Int) -> Int
+manhattan (x1,y1) (x2,y2) = abs (x2 - x1) + abs (y2 - y1)
 
 instance Show Direction where
   show North = "↑"
@@ -93,6 +97,13 @@ applyStep d g = let
     (BT,Clear) -> pushBox
     (BT,Target) -> pushBox
     _ -> Nothing
+
+clearSteps :: Grid -> [(Integer, Direction, Grid)]
+clearSteps g = let
+  p = gridPlayer g
+  in map (\(d,p') -> (1,d,g {gridPlayer = p'})) $
+    filter (\(_,p') -> isClear p' g) $
+    map (\d -> let p' = step d p in (d,p')) directions
 
 {-
  - Input format:
