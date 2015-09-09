@@ -5,6 +5,7 @@ module Grid (
   directions,
   stride,
   step,
+  manhattan,
   turnLeft,
   turnRight,
   applyStep,
