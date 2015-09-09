@@ -48,7 +48,17 @@ whiteList :: Grid -> Array (Int,Int) Bool
 whiteList g = let
   s = pullStart g
   h = gridPlayer g
-  in undefined
+  subpath g0 = do
+    (c1,s1,g1) <- changePull g0
+    (c2,s2,g2) <- pullSteps g1
+    guard $ backHome h g2
+    return (c1 + c2, s1 ++ [s2], g2)
+  bp = concatMap (\(_,b,_) -> S.toList $ gridBoxes b) $ dijkstra'
+    (const True)
+    subpath
+    (pullStart g)
+  ab = bounds $ gridWalls g
+  in array ab $ map (flip (,) False) (range ab) ++ map (flip (,) True) bp
 
 backHome h g = case astar
   (\p -> max 0 $ fromIntegral $ manhattan h p - 1)
