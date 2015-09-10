@@ -4,15 +4,18 @@ module Planning (
 
 import Routing
 import Grid
+import Deadlocks
 
 import Data.List
 import Data.Maybe
 import qualified Data.Set as S
+import Data.Array
+import Control.Monad
 
 --TODO: The Hungarian algorithm is a better heuristic
 heuristic = const 0
 
-solve g = case astar heuristic solved walks g of
+solve g = case astar heuristic solved (walks $ whiteList g) g of
   [] -> Nothing
   ((s,_,_):_) -> Just $ concat s
 
@@ -36,14 +39,14 @@ pushTunnel (c,d,g) = if inTunnel g d
     return (c', d:s, g')
   else Just (c,[d],g)
 
-pushSteps :: Grid -> [(Integer, [Direction], Grid)]
-pushSteps g = let
+pushSteps :: Array (Int,Int) Bool -> Grid -> [(Integer, [Direction], Grid)]
+pushSteps w g = let
   p = gridPlayer g
   in mapMaybe (\(d,p',b') -> pushTunnel (1,d,g {
       gridPlayer = p',
       gridBoxes = S.delete p' $ S.insert b' $ gridBoxes g
      })) $
-    filter (\(_,p',b') -> isBox p' g && isClear b' g
+    filter (\(_,p',b') -> isBox p' g && w ! b' && isClear b' g
      ) $
     map (\d -> let p' = step d p in (d,p',step d p')) directions
 
@@ -59,9 +62,9 @@ clearWalks g = let
 wrapStep :: (n -> [(Integer,s,n)]) -> n -> [(Integer,[s],n)]
 wrapStep b = map (\(c,s,n) -> (c,[s],n)) . b
 
-walks :: Grid -> [(Integer,[Direction],Grid)]
-walks g = do
+walks :: Array (Int,Int) Bool -> Grid -> [(Integer,[Direction],Grid)]
+walks w g = do
   (c1,p1,g1) <- clearWalks g
-  (c2,p2,g2) <- pushSteps g1
+  (c2,p2,g2) <- pushSteps w g1
   return (c1 + c2, p1 ++ p2, g2)
 
