@@ -1,6 +1,8 @@
 module Routing (
   astar,
-  dijkstra
+  dijkstra,
+  astar',
+  dijkstra'
  ) where
 
 import qualified Data.Heap as H
@@ -8,13 +10,13 @@ import qualified Data.Map as M
 import Data.Monoid ((<>))
 import Control.Monad.State
 
-astar :: (Ord n) =>
+astar' :: (Ord n) =>
   (n -> Integer) ->
   (n -> Bool) ->
   (n -> [(Integer,s,n)]) ->
-  n ->
+  [n] ->
   [([s],n,Integer)]
-astar h g b s = flip evalState (H.singleton 0 (s,id,0)) (go M.empty) where
+astar' h g b s = flip evalState (H.fromList $ map (\s' -> (h s',(s',id,0))) s) (go M.empty) where
   go v = do
     n <- pop
     case n of
@@ -29,6 +31,18 @@ astar h g b s = flip evalState (H.singleton 0 (s,id,0)) (go M.empty) where
           na = pushAll nxt >> go v'
           v' = M.insert a (s []) v
           in if g a then fmap ((s [], a, c):) na else na
+
+astar :: (Ord n) =>
+  (n -> Integer) ->
+  (n -> Bool) ->
+  (n -> [(Integer,s,n)]) ->
+  n ->
+  [([s],n,Integer)]
+astar h g b s = astar' h g b [s]
+
+dijkstra' ::
+  (Ord n) => (n -> Bool) -> (n -> [(Integer,s,n)]) -> [n] -> [([s],n,Integer)]
+dijkstra' = astar' (const 0)
 
 dijkstra ::
   (Ord n) => (n -> Bool) -> (n -> [(Integer,s,n)]) -> n -> [([s],n,Integer)]
