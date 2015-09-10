@@ -51,7 +51,7 @@ whiteList g = let
   subpath g0 = do
     (c1,s1,g1) <- changePull g0
     (c2,s2,g2) <- pullSteps g1
-    guard $ backHome h g2
+--    guard $ backHome h g2
     return (c1 + c2, s1 ++ [s2], g2)
   bp = concatMap (\(_,b,_) -> S.toList $ gridBoxes b) $ dijkstra'
     (const True)
@@ -67,7 +67,7 @@ backHome h g = case astar
     d <- directions
     let p' = step d p
     guard $ isClear p' g
-    return (1,d,p)
+    return (1,d,p')
    )
   (gridPlayer g)
  of
