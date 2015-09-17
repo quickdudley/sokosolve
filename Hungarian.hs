@@ -9,10 +9,14 @@ import Control.Monad.Trans.Class
 import Data.Array.ST
 import Data.Array
 import Data.STRef
+import Data.List
+import Data.Function (on)
 
 hungarian :: (a -> b -> Integer) -> [a] -> [b] -> [(a,b,Integer)]
 hungarian mf workers jobs = runST $ do
-  let dim = max (length workers) (length jobs)
+  let
+    dim = max (length workers) (length jobs)
+    jobsArray = listArray (0, dim - 1) jobs
 
   -- Set up cost matrix
   costMatrix <- newArray ((0,0),(dim - 1, dim - 1)) 0 :: ST s (STArray s (Int,Int) Integer)
@@ -43,6 +47,15 @@ hungarian mf workers jobs = runST $ do
     match w j = do
       writeArray matchJobByWorker w (Just j)
       writeArray matchWorkerByJob j (Just w)
+    fetchUnmatchedWorker = let
+      c n = if n >= dim
+        then return Nothing
+        else do
+          j <- readArray matchJobByWorker n
+          case j of
+            Nothing -> c (n + 1)
+            _ -> return j
+      in c 0
 
   -- Initial greedy matching
   forM_ [0 .. dim - 1] $ \w -> forM [0 .. dim - 1] $ \j -> do
@@ -57,5 +70,52 @@ hungarian mf workers jobs = runST $ do
           (Nothing,Nothing) -> match w j
           _ -> return ()
       else return ()
+
+  -- The main loop of the algorithm
+  let
+    ml = do
+      uw' <- fetchUnmatchedWorker
+      case uw' of
+        Nothing -> return ()
+        Just uw -> do
+          -- Initialize run
+          committedWorkers <- newArray (0,dim-1) False :: ST s (STArray s Int Bool)
+          parentWorkerByCommittedJob <- newArray (0,dim-1) Nothing :: ST s (STArray s Int (Maybe Int))
+          minSlackValueByJob <- newArray (0,dim-1) 0 :: ST s (STArray s Int Integer)
+          minSlackWorkerByJob <- newArray (0,dim-1) uw :: ST s (STArray s Int Int)
+          writeArray committedWorkers uw True
+          luw <- readArray labelByJob uw
+          forM_ [0 .. dim - 1] $ \j -> do
+            c <- readArray costMatrix (uw,j)
+            lj <- readArray labelByJob j
+            writeArray minSlackValueByJob j (c - luw - lj)
+
+          -- Main calculation
+          flip runContT return $ callCC $ \endPhase -> forever $ do
+            (minSlackValue,minSlackWorker,minSlackJob) <- lift $
+              fmap (maximumBy (compare `on` \(a,_,_) -> a)) $
+              forM [0 .. dim - 1] $ \j -> do
+                sv <- readArray minSlackValueByJob j
+                sw <- readArray minSlackWorkerByJob j
+                return (sv,sw,j)
+            when (minSlackValue > 0) $ lift $ do
+              -- Update Labeling
+              forM_ [0 .. dim - 1] $ \w -> do
+                cw <- readArray committedWorkers w
+                when cw $ do
+                  l <- readArray labelByWorker w
+                  writeArray labelByWorker w (l + minSlackValue)
+              forM_ [0 .. dim - 1] $ \j -> do
+                pw <- readArray parentWorkerByCommittedJob j
+                case pw of
+                  Just _ -> do
+                    lj <- readArray labelByJob j
+                    writeArray labelByJob j (lj - minSlackValue)
+                  Nothing -> do
+                    ms <- readArray minSlackValueByJob j
+                    writeArray minSlackValueByJob j (ms - minSlackValue)
+            undefined
+          ml
+  ml
   undefined
 
