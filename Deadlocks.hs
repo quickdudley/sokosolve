@@ -81,8 +81,8 @@ multiDeadlock md g = let
   p = gridPlayer g
   b1 = step md p
   check b 
-    | gridWalls g ! b = return True
-    | not (S.member b $ gridBoxes g) = return False
+    | isWall b g = return True
+    | not (isBox b g) = return False
     | otherwise = do
       l <- fmap (S.member b) get
       if l
