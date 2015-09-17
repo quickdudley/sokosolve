@@ -45,7 +45,7 @@ pushSteps w g = let
   in mapMaybe (\(d,p',b') -> pushTunnel (1,d,g {
       gridPlayer = p',
       gridBoxes = S.delete p' $ S.insert b' $ gridBoxes g
-     })) $
+     }) >>= \t@(_,_,g) -> if multiDeadlock d g then Nothing else Just t) $
     filter (\(_,p',b') -> isBox p' g && w ! b' && isClear b' g
      ) $
     map (\d -> let p' = step d p in (d,p',step d p')) directions

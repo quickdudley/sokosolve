@@ -1,5 +1,6 @@
 module Deadlocks (
-  whiteList
+  whiteList,
+  multiDeadlock
  ) where
 
 import Grid
@@ -7,6 +8,7 @@ import Routing
 import Data.Array
 import qualified Data.Set as S
 import Control.Monad
+import Control.Monad.State
 
 pullSteps :: Grid -> [(Integer,Direction,Grid)]
 pullSteps g = let
@@ -73,4 +75,26 @@ backHome h g = case astar
  of
   [] -> False
   _ -> True
+
+multiDeadlock :: Direction -> Grid -> Bool
+multiDeadlock md g = let
+  p = gridPlayer g
+  b1 = step md p
+  check b 
+    | isWall b g = return True
+    | not (isBox b g) = return False
+    | otherwise = do
+      l <- fmap (S.member b) get
+      if l
+        then return True
+        else do
+          modify (S.insert b)
+          s <- forM directions $ \d -> check (step d b)
+          case s of
+            [True,True,_,_] -> return True
+            [_,True,True,_] -> return True
+            [_,_,True,True] -> return True
+            [True,_,_,True] -> return True
+            _ -> modify (S.delete b) >> return False
+  in evalState (check b1) S.empty
 
