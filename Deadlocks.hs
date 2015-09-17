@@ -96,5 +96,5 @@ multiDeadlock md g = let
             [_,_,True,True] -> return True
             [True,_,_,True] -> return True
             _ -> modify (S.delete b) >> return False
-  in evalState (check b1) S.empty
+  in not (isTarget b1 g) && evalState (check b1) S.empty
 
