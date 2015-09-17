@@ -23,6 +23,7 @@ main = do
      ]
     (fn:_) -> do
       g <- fmap readGrid $ readFile fn
+      hSetEncoding stdout utf8
       case solve g of
         Nothing -> putStrLn "No solution"
         Just s -> putStrLn $ intercalate "," $ map show s
