@@ -10,6 +10,7 @@ import Data.Array.ST
 import Data.Array
 import Data.STRef
 import Data.List
+import Data.Maybe
 import Data.Function (on)
 
 hungarian :: (a -> b -> Integer) -> [a] -> [b] -> [(a,b,Integer)]
@@ -93,11 +94,15 @@ hungarian mf workers jobs = runST $ do
           -- Main calculation
           flip runContT return $ callCC $ \endPhase -> forever $ do
             (minSlackValue,minSlackWorker,minSlackJob) <- lift $
-              fmap (maximumBy (compare `on` \(a,_,_) -> a)) $
+              fmap (maximumBy (compare `on` \(a,_,_) -> a) . catMaybes) $
               forM [0 .. dim - 1] $ \j -> do
-                sv <- readArray minSlackValueByJob j
-                sw <- readArray minSlackWorkerByJob j
-                return (sv,sw,j)
+                pw <- readArray parentWorkerByCommittedJob j
+                case pw of
+                  Nothing -> do
+                    sv <- readArray minSlackValueByJob j
+                    sw <- readArray minSlackWorkerByJob j
+                    return $ Just (sv,sw,j)
+                  _ -> return Nothing
             when (minSlackValue > 0) $ lift $ do
               -- Update Labeling
               forM_ [0 .. dim - 1] $ \w -> do
@@ -114,6 +119,7 @@ hungarian mf workers jobs = runST $ do
                   Nothing -> do
                     ms <- readArray minSlackValueByJob j
                     writeArray minSlackValueByJob j (ms - minSlackValue)
+            
             undefined
           ml
   ml
