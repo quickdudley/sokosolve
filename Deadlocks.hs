@@ -111,7 +111,9 @@ pushDistances g = let
       s = do
         let s1 = let x = S.singleton l in g {gridTargets = x, gridBoxes = x}
         d <- directions
-        return $ s1 {gridPlayer = step d l }
+        let p = step d l
+        guard $ not (isWall p s1)
+        return $ s1 {gridPlayer = p }
       in map (\(l',c) -> (l', Just c)) $
         M.toList $ M.fromListWith min $
         map (\(_,gp,c) -> (S.findMin $ gridBoxes gp,c)) $

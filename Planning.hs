@@ -13,14 +13,16 @@ import qualified Data.Set as S
 import Data.Array
 import Control.Monad
 
-heuristic g = let
-  m = hungarian
-   (\a b -> fromIntegral $ manhattan a b)
-   (S.toList $ gridBoxes g)
-   (S.toList $ gridTargets g)
-  in sum $ map (\(_,_,c) -> c) m
+heuristic g0 = let
+  dm = pushDistances g0
+  in \g -> let
+    m = hungarian
+     (\b t -> maybe (fromIntegral (maxBound :: Int)) id (dm ! t ! b))
+     (S.toList $ gridBoxes g)
+     (S.toList $ gridTargets g)
+    in sum $ map (\(_,_,c) -> c) m
 
-solve g = case astar heuristic solved (walks $ whiteList g) g of
+solve g = case astar (heuristic g) solved (walks $ whiteList g) g of
   [] -> Nothing
   ((s,_,_):_) -> Just $ concat s
 
