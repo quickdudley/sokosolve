@@ -8,6 +8,7 @@ module Grid (
   manhattan,
   turnLeft,
   turnRight,
+  turnAround,
   applyStep,
   lookupGrid,
   isBox,
@@ -52,6 +53,11 @@ turnRight North = East
 turnRight East = South
 turnRight South = West
 turnRight West = North
+
+turnAround North = South
+turnAround East = West
+turnAround South = North
+turnAround West = East
 
 manhattan :: (Int,Int) -> (Int,Int) -> Int
 manhattan (x1,y1) (x2,y2) = abs (x2 - x1) + abs (y2 - y1)

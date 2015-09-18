@@ -1,19 +1,21 @@
 module Deadlocks (
   whiteList,
-  multiDeadlock
+  multiDeadlock,
+  pushDistances
  ) where
 
 import Grid
 import Routing
 import Data.Array
 import qualified Data.Set as S
+import qualified Data.Map as M
 import Control.Monad
 import Control.Monad.State
 
 pullSteps :: Grid -> [(Integer,Direction,Grid)]
 pullSteps g = let
   p = gridPlayer g
-  in map (\(b,p',d) -> (1,d,g {
+  in map (\(b,p',d) -> (1,turnAround d,g {
       gridPlayer = p',
       gridBoxes = S.insert p $ S.delete b $ gridBoxes g
      })) $
@@ -46,15 +48,15 @@ changePull g = let
     (gridPlayer g)
   in map (\(d,l,c) -> (c,d,g {gridPlayer = l})) r
 
+subpath g0 = do
+  (c1,s1,g1) <- changePull g0
+  (c2,s2,g2) <- pullSteps g1
+  return (c1 + c2, s1 ++ [s2], g2)
+
 whiteList :: Grid -> Array (Int,Int) Bool
 whiteList g = let
   s = pullStart g
   h = gridPlayer g
-  subpath g0 = do
-    (c1,s1,g1) <- changePull g0
-    (c2,s2,g2) <- pullSteps g1
---    guard $ backHome h g2
-    return (c1 + c2, s1 ++ [s2], g2)
   bp = concatMap (\(_,b,_) -> S.toList $ gridBoxes b) $ dijkstra'
     (const True)
     subpath
@@ -97,4 +99,22 @@ multiDeadlock md g = let
             [True,_,_,True] -> return True
             _ -> modify (S.delete b) >> return False
   in not (isTarget b1 g) && evalState (check b1) S.empty
+
+-- This function doesn't belong in this module thematically speaking, but uses
+-- several of the helper functions defined here
+pushDistances :: Grid -> Array (Int,Int) (Array (Int,Int) (Maybe Integer))
+pushDistances g = let
+  b = bounds $ gridWalls g
+  go l = array b $ [(x,Nothing) | x <- range b] ++ if isWall l g
+    then []
+    else let
+      s = do
+        let s1 = let x = S.singleton l in g {gridTargets = x, gridBoxes = x}
+        d <- directions
+        return $ s1 {gridPlayer = step d l }
+      in map (\(l',c) -> (l', Just c)) $
+        M.toList $ M.fromListWith min $
+        map (\(_,gp,c) -> (S.findMin $ gridBoxes gp,c)) $
+        dijkstra' (const True) subpath s
+  in array b [(l, go l) | l <- range b]
 
