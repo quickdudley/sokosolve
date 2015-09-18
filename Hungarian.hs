@@ -1,5 +1,5 @@
 module Hungarian (
-
+  hungarian
  ) where
 
 import Control.Monad
@@ -55,8 +55,8 @@ hungarian mf workers jobs = runST $ do
         else do
           j <- readArray matchJobByWorker n
           case j of
-            Nothing -> c (n + 1)
-            _ -> return j
+            Just _ -> c (n + 1)
+            Nothing -> return j
       in c 0
 
   -- Initial greedy matching

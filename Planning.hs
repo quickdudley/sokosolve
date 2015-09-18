@@ -5,6 +5,7 @@ module Planning (
 import Routing
 import Grid
 import Deadlocks
+import Hungarian
 
 import Data.List
 import Data.Maybe
@@ -12,8 +13,12 @@ import qualified Data.Set as S
 import Data.Array
 import Control.Monad
 
---TODO: The Hungarian algorithm is a better heuristic
-heuristic = const 0
+heuristic g = let
+  m = hungarian
+   (\a b -> fromIntegral $ manhattan a b)
+   (S.toList $ gridBoxes g)
+   (S.toList $ gridTargets g)
+  in sum $ map (\(_,_,c) -> c) m
 
 solve g = case astar heuristic solved (walks $ whiteList g) g of
   [] -> Nothing
