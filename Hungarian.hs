@@ -16,8 +16,9 @@ import Data.Function (on)
 hungarian :: (a -> b -> Integer) -> [a] -> [b] -> [(a,b,Integer)]
 hungarian mf workers jobs = runST $ do
   let
-    dim = max (length workers) (length jobs)
-    jobsArray = listArray (0, dim - 1) jobs
+    nJobs = length jobs
+    dim = max (length workers) nJobs
+    jobsArray = listArray (0, nJobs - 1) jobs
 
   -- Set up cost matrix
   costMatrix <- newArray ((0,0),(dim - 1, dim - 1)) 0 :: ST s (STArray s (Int,Int) Integer)
@@ -119,9 +120,57 @@ hungarian mf workers jobs = runST $ do
                   Nothing -> do
                     ms <- readArray minSlackValueByJob j
                     writeArray minSlackValueByJob j (ms - minSlackValue)
-            
-            undefined
+            lift $ writeArray parentWorkerByCommittedJob minSlackJob (Just minSlackWorker)
+            mw <- lift $ readArray matchWorkerByJob minSlackJob
+            case mw of
+              Nothing -> do -- Apply the augmenting path
+                committedJob <- lift $ newSTRef (Just minSlackJob)
+                parentWorker <- lift $
+                  readArray parentWorkerByCommittedJob minSlackJob >>= newSTRef
+                callCC $ \endAugmentingPath -> forever $ do
+                  temp <- lift $
+                    readSTRef parentWorker >>= \pw -> case pw of
+                      Just pw' -> readArray parentWorkerByCommittedJob pw'
+                      Nothing -> return Nothing
+                  pw <- lift $ readSTRef parentWorker
+                  cj <- lift $ readSTRef committedJob
+                  lift $ case (pw,cj) of
+                    (Just pw',Just cj') -> match pw' cj'
+                    (Nothing,Just cj') -> writeArray matchWorkerByJob cj' Nothing
+                    (Just pw',Nothing) -> writeArray matchJobByWorker pw' Nothing
+                    _ -> return ()
+                  lift $ writeSTRef committedJob temp
+                  case temp of
+                    Nothing -> endAugmentingPath ()
+                    Just tmp -> lift $
+                      readArray parentWorkerByCommittedJob tmp >>=
+                      writeSTRef parentWorker
+                endPhase ()
+              Just worker -> lift $ do -- Update slack values
+                writeArray committedWorkers worker True
+                forM_ [0 .. dim - 1] $ \j -> do
+                  pw <- readArray parentWorkerByCommittedJob j
+                  case pw of
+                    Just _ -> return ()
+                    Nothing -> do
+                      c <- readArray costMatrix (worker,j)
+                      lw <- readArray labelByWorker worker
+                      lj <- readArray labelByJob j
+                      let slack = c - lw - lj
+                      msv <- readArray minSlackValueByJob j
+                      when (msv > slack) $ do
+                        writeArray minSlackValueByJob j slack
+                        writeArray minSlackWorkerByJob j worker
           ml
   ml
-  undefined
+  
+  -- Format the result
+  fmap catMaybes $ forM (zip workers [0..]) $ \(w,wi) -> do
+    ji' <- readArray matchJobByWorker wi
+    case ji' of
+      Nothing -> return Nothing
+      Just ji -> do
+        if ji >= nJobs
+          then return Nothing
+          else return $ Just (w,jobsArray ! ji, originalCosts ! (wi,ji))
 
