@@ -95,7 +95,7 @@ hungarian mf workers jobs = runST $ do
           -- Main calculation
           flip runContT return $ callCC $ \endPhase -> forever $ do
             (minSlackValue,minSlackWorker,minSlackJob) <- lift $
-              fmap (maximumBy (compare `on` \(a,_,_) -> a) . catMaybes) $
+              fmap (minimumBy (compare `on` \(a,_,_) -> a) . catMaybes) $
               forM [0 .. dim - 1] $ \j -> do
                 pw <- readArray parentWorkerByCommittedJob j
                 case pw of
@@ -130,7 +130,7 @@ hungarian mf workers jobs = runST $ do
                 callCC $ \endAugmentingPath -> forever $ do
                   temp <- lift $
                     readSTRef parentWorker >>= \pw -> case pw of
-                      Just pw' -> readArray parentWorkerByCommittedJob pw'
+                      Just pw' -> readArray matchJobByWorker pw'
                       Nothing -> return Nothing
                   pw <- lift $ readSTRef parentWorker
                   cj <- lift $ readSTRef committedJob
