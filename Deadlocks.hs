@@ -78,6 +78,7 @@ backHome h g = case astar
 
 multiDeadlock :: Direction -> Grid -> Bool
 multiDeadlock md g = let
+  ub = gridBoxes g S.\\ gridTargets g
   p = gridPlayer g
   b1 = step md p
   check b 
@@ -96,5 +97,13 @@ multiDeadlock md g = let
             [_,_,True,True] -> return True
             [True,_,_,True] -> return True
             _ -> modify (S.delete b) >> return False
-  in not (isTarget b1 g) && evalState (check b1) S.empty
+  in if isTarget b1 g
+    then any (\t -> let
+      b = step (t md) b1
+      in if S.member b ub
+        then evalState (check b) S.empty
+        else False
+     ) [turnLeft,id,turnRight]
+    else evalState (check b1) S.empty
+
 
