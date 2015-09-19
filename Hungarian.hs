@@ -56,7 +56,7 @@ hungarian mf workers jobs = runST $ do
           j <- readArray matchJobByWorker n
           case j of
             Just _ -> c (n + 1)
-            Nothing -> return j
+            Nothing -> return $ Just n
       in c 0
 
   -- Initial greedy matching
